@@ -321,6 +321,13 @@ var gmap = gmap || {};
             var obj = {};
             $placemark = $(placemark);
             obj.geometry = $placemark.find("MultiGeometry")[0];
+            // If MultiGeometry is not found, attempt to find Polygons
+            // to convert to MultiGeometry
+            if(typeOf(obj.geometry) == "undefined") {
+              var multi = $('<MultiGeometry></MultiGeometry>').appendTo($placemark);
+              $placemark.find("Polygon").appendTo(multi);
+              obj.geometry = multi[0];
+            };
             obj.id = $placemark.find("name").text();
             obj.properties = {};
             var datapoints = $placemark.find("ExtendedData Data"), $datapoint, val;

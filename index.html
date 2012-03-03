@@ -29,6 +29,15 @@
     <p>Highlighting/selecting/unselecting colors are based on feature data, via responsive_*_opts callbacks</p>
     <div id="map4" style="width:500px;height:300px;"></div>
   </li>
+  <li>
+    <p>Multigeometries only</p>
+    <div id="map5" style="width:500px;height:300px;"></div>
+  </li>
+  <li>
+    <p>Multigeometries + polygons</p>
+    <div id="map6" style="width:500px;height:300px;"></div>
+  </li>
+
 </ul>
 
 
@@ -256,12 +265,53 @@ function map4() {
     });
 }
 
+var michigan_options = {
+  center: new google.maps.LatLng(43.945372,-85.056152),
+  zoom: 6,
+  mapTypeId: google.maps.MapTypeId.ROADMAP,
+  mapTypeControl: false,
+  streetViewControl: false
+}
+
+// example using KML data
+function map5() {
+    var map, features;
+
+    map = new google.maps.Map(document.getElementById("map5"), michigan_options);
+    $.get("sampledata/multigeometries-only.kml", function(data) {
+
+	features = gmap.load_polygons({
+	    map: map,
+	    data: data, //required. all other params are optional
+            data_type: "kml", // 'json' is default. can also use 'kml' in which case pass the kml document as data as a string
+	});
+
+    });
+}
+
+// example using KML data
+function map6() {
+    var map, features;
+
+    map = new google.maps.Map(document.getElementById("map6"), michigan_options);
+    $.get("sampledata/multigeometries-and-polygons.kml", function(data) {
+
+	features = gmap.load_polygons({
+	    map: map,
+	    data: data, //required. all other params are optional
+            data_type: "kml", // 'json' is default. can also use 'kml' in which case pass the kml document as data as a string 
+	});
+
+    });
+}
 
 function initialize() {
     map1();
     map2();
     map3();
     map4();
+    map5();
+    map6();
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
