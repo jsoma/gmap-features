@@ -6,32 +6,38 @@ var gmap = gmap || {};
 
 (function() {
 
-    function parseKML(kmlstring) {
-        var doc = $(kmlstring);
-        var features = $.map(doc.find("Placemark"), function(placemark, i) {
-            var obj = {};
-            $placemark = $(placemark);
-            obj.geometry = $placemark.find("MultiGeometry")[0];
-            // If MultiGeometry is not found, attempt to find Polygons
-            // to convert to MultiGeometry
-            if(typeOf(obj.geometry) == "undefined") {
-              var multi = $('<MultiGeometry></MultiGeometry>').appendTo($placemark);
-              $placemark.find("Polygon").appendTo(multi);
-              obj.geometry = multi[0];
-            };
-            obj.id = $placemark.find("name").text();
-            obj.properties = {};
-            var datapoints = $placemark.find("ExtendedData Data"), $datapoint, val;
-            for (var j=0,len=datapoints.length; j<len; j++) {
-                $datapoint = $(datapoints[j]),
-                val = $datapoint.find("value").text();
-                if (!isNaN(parseFloat(val))) { val = Number(val); }
-                obj.properties[$datapoint.attr("name")] = val;
-            }
-            return obj;
-        });
-        return features;
-    }
+  function parseKML(kmlstring) {
+      var doc;
+      try {
+        // For some reason IE needs this to work with Polygons in some instances
+        doc = $( $.parseXML(kmlstring) );
+      } catch(e) {
+        // It'll fall through to here in at least FF, though, on malformed XML
+        doc = $( kmlstring );
+      }
+      var features = $.map(doc.find("Placemark"), function(placemark, i) {
+          var obj = {};
+          $placemark = $(placemark);
+          obj.geometry = $placemark.find("MultiGeometry")[0];
+          // If MultiGeometry is not found, attempt to find a Polygon
+          // to use instead
+          if(typeOf(obj.geometry) == "undefined") {
+            obj.geometry = $placemark.find("Polygon")[0];
+          };
+          obj.id = $placemark.find("name").text();
+          obj.properties = {};
+          var datapoints = $placemark.find("ExtendedData Data"), $datapoint, val;
+          for (var j=0,len=datapoints.length; j<len; j++) {
+              $datapoint = $(datapoints[j]),
+              val = $datapoint.find("value").text();
+              if (!isNaN(parseFloat(val))) { val = Number(val); }
+              obj.properties[$datapoint.attr("name")] = val;
+          }
+          return obj;
+      });
+      window.kml = kmlstring; 
+      return features;
+  }
 
     gmap.load_polygons = function(params) {
         var self = {},
@@ -58,7 +64,11 @@ var gmap = gmap || {};
         for (var i=0,len=data.length; i<len; i++) {
             if (typeOf(data[i].geometry.coordinates) !== "array") {
                 // data is a KML node
-                geom = gmap.geom.ParseKMLMultiPolygon(data[i].geometry);
+                if (data[i].geometry.tagName == "Polygon") {
+                  geom = gmap.geom.ParseKMLPolygon(data[i].geometry);
+                } else {
+                  geom = gmap.geom.ParseKMLMultiPolygon(data[i].geometry);
+                }
             } else {
                 // data is a geom object
                 if (data[i].geometry.type == "Polygon") {
